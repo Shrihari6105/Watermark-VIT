@@ -1,7 +1,3 @@
-"""WaterMark-VIT dashboard (Flask).
-
-    python app.py            -> http://127.0.0.1:5050
-"""
 import base64
 import io
 import os

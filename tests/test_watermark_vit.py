@@ -91,18 +91,16 @@ def test_fragile_key_binding(system):
     assert fragile.verify(sealed, w.master, "E00-S0002").all()     # wrong script id fails everywhere
 
 
-def test_fieldkit_prepare_and_analyze(tmp_path):
+def test_leaktest_on_scanned_pages(tmp_path):
     import csv
-    import fieldkit
-    from watermark_vit import imaging
+    from watermark_vit import imaging, leaktest
 
-    kit, caps, data = tmp_path / "kit", tmp_path / "caps", tmp_path / "data"
-    fieldkit.main(["prepare", str(kit), "--data", str(data), "--pages", "2", "--students", "50"])
-    assert (kit / "print_me.pdf").exists() and (kit / "PROTOCOL.md").exists()
-    caps.mkdir()
-    for r in csv.DictReader(open(kit / "manifest.csv")):
-        page = imaging.load_gray(kit / "digital" / f"{r['page_id']}.png")
-        imaging.save(caps / f"{r['page_id']}_scan300_test.jpg", attacks.print_scan(page, 300, seed=1))
-    fieldkit.main(["analyze", str(kit), str(caps), "--out", str(tmp_path / "rep")])
-    rows = list(csv.DictReader(open(tmp_path / "rep" / "results.csv")))
-    assert [r["outcome"] for r in rows] == ["correct", "correct"]
+    scans = tmp_path / "scans"
+    # a "scanned" page: grey uneven paper, smaller than canonical, handwriting already on it
+    page = templates.add_handwriting(templates.answer_sheet(seed=5), seed=3)
+    page = (page.astype(float) * np.linspace(0.85, 0.95, page.shape[1])).astype(np.uint8)
+    imaging.save(scans / "a.png", page[::2, ::2])
+    imaging.save(scans / "b.pdf", page)
+    leaktest.run([scans], tmp_path / "out", channels=["whatsapp", "phone30", "crop50"])
+    rows = list(csv.DictReader(open(tmp_path / "out" / "results.csv")))
+    assert len(rows) == 6 and all(r["outcome"] == "correct" for r in rows)

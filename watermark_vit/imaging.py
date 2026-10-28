@@ -32,6 +32,20 @@ def load_gray(path_or_bytes):
     return img
 
 
+def load_pages(path):
+    """Load every page of a PDF (or a single image) as a list of uint8 grayscale arrays."""
+    path = Path(path)
+    if path.suffix.lower() != ".pdf":
+        return [load_gray(path)]
+    import pymupdf
+    doc = pymupdf.open(path)
+    pages = []
+    for page in doc:
+        pix = page.get_pixmap(dpi=150, colorspace=pymupdf.csGRAY)
+        pages.append(np.frombuffer(pix.samples, dtype=np.uint8).reshape(pix.height, pix.width).copy())
+    return pages
+
+
 def save(path, img):
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)

@@ -1,22 +1,21 @@
 """WaterMark-VIT command line.
 
+  python cli.py test my_scans.pdf                 # watermark -> leak 15 ways -> report (no printer)
+  python cli.py analyze test_output               # re-score after adding your own photos to test_output/leaks
+  python cli.py demo                              # whole lifecycle on a synthetic page
+
   python cli.py create-exam "CAT1 CSE3501" roster.txt
-  python cli.py template out/blank.png [--kind booklet|question] [--seed 3]
-  python cli.py issue 0 out/blank.png out/issued/ [--pdf]
+  python cli.py issue 1 out/issued/ [--page paper.pdf] [--pdf]
   python cli.py investigate leaked_photo.jpg
   python cli.py seal evaluated_scan.png out/sealed.png
   python cli.py verify out/sealed.png [--overlay out/heatmap.png]
-  python cli.py attack out/issued/23BCE1001.png phone30deg40cm out/leak.jpg
-  python cli.py demo
 """
 import argparse
 import json
 import sys
 from pathlib import Path
 
-from watermark_vit import WaterMarkVIT, attacks, imaging, templates
-
-ALL_ATTACKS = {**attacks.DIGITAL, **attacks.PHYSICAL, **attacks.TAMPER}
+from watermark_vit import WaterMarkVIT, attacks, imaging, leaktest, templates
 
 
 def _print_investigation(r):
@@ -40,29 +39,26 @@ def main(argv=None):
     ap.add_argument("--data", default="data", help="data directory (key + registry)")
     sub = ap.add_subparsers(dest="cmd", required=True)
 
+    p = sub.add_parser("test"); p.add_argument("inputs", nargs="+"); p.add_argument("--out", default="test_output")
+    p = sub.add_parser("analyze"); p.add_argument("out", nargs="?", default="test_output")
     p = sub.add_parser("create-exam"); p.add_argument("name"); p.add_argument("roster")
-    p = sub.add_parser("template"); p.add_argument("out"); p.add_argument("--kind", default="booklet")
-    p.add_argument("--seed", type=int, default=0)
-    p = sub.add_parser("issue"); p.add_argument("exam", type=int); p.add_argument("page")
-    p.add_argument("outdir"); p.add_argument("--pdf", action="store_true")
+    p = sub.add_parser("issue"); p.add_argument("exam", type=int); p.add_argument("outdir")
+    p.add_argument("--page", help="your question paper (image/PDF); default: a built-in template")
+    p.add_argument("--pdf", action="store_true")
     p = sub.add_parser("investigate"); p.add_argument("image"); p.add_argument("--json", action="store_true")
     p = sub.add_parser("seal"); p.add_argument("scan"); p.add_argument("out")
     p = sub.add_parser("verify"); p.add_argument("sealed"); p.add_argument("--script-id")
     p.add_argument("--overlay")
-    p = sub.add_parser("attack"); p.add_argument("image"); p.add_argument("name", choices=sorted(ALL_ATTACKS))
-    p.add_argument("out"); p.add_argument("--seed", type=int, default=0)
     sub.add_parser("list-exams")
     sub.add_parser("demo")
     a = ap.parse_args(argv)
 
-    if a.cmd == "template":
-        imaging.save(a.out, templates.answer_sheet(a.seed, a.kind))
-        print("wrote", a.out)
+    if a.cmd == "test":
+        leaktest.run(a.inputs, a.out)
         return
-    if a.cmd == "attack":
-        img = imaging.load_gray(a.image)
-        imaging.save(a.out, ALL_ATTACKS[a.name](img, seed=a.seed))
-        print("wrote", a.out)
+    if a.cmd == "analyze":
+        leaktest.analyze(Path(a.out))
+        print("report ->", Path(a.out) / "report.md")
         return
 
     w = WaterMarkVIT(a.data)
@@ -75,7 +71,7 @@ def main(argv=None):
             print(f"{e['code']:>3}  {e['name']:<30} n={e['n_students']}  created {e['created']}")
     elif a.cmd == "issue":
         out = Path(a.outdir)
-        page = imaging.load_gray(a.page)
+        page = imaging.load_gray(a.page) if a.page else templates.answer_sheet()
         for st, wm in w.issue(page, a.exam):
             imaging.save(out / f"{st['reg_no']}.{'pdf' if a.pdf else 'png'}", wm)
         print("issued copies to", out)

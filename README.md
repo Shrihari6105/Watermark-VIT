@@ -1,99 +1,83 @@
 # WaterMark-VIT
 
-Leak attribution and tamper localisation for exam question papers and answer scripts.
+WaterMark-VIT is a hidden watermark for exam papers. It has two jobs:
 
-WaterMark-VIT takes the dual-watermark idea from **EditGuard** (Zhang et al., CVPR 2024) and makes three changes:
+1. **Find who leaked a paper.** Every student's copy carries an invisible ID. If a photo, screenshot or scan of the paper turns up on WhatsApp, the program reads the ID and names the student.
+2. **Catch edited marks.** After evaluation, a scanned answer script is sealed. If anyone later changes a mark, the program highlights the edited spot.
 
-1. **Document domain.** It targets low-texture exam pages that go through print, scan, photo and screenshot channels, not natural photos.
-2. **Per-student payload.** The single copyright ID becomes a per-student payload: a Reed–Solomon-protected ID plus a collusion-resistant Tardos fingerprint.
-3. **Lifecycle split.** The robust layer goes on paper *before* the exam. The fragile layer goes on the scan *after* evaluation.
+The idea comes from EditGuard (CVPR 2024), adapted to exam pages. It runs on a normal laptop, with no GPU and no training.
 
-This is the classical-hybrid build from the roadmap (Phase 3). It runs on CPU and needs no GPU or training.
-
-```
- BEFORE EXAM                     LEAK                          AFTER EVALUATION
- master page ─► tint + ArUco ─►  photo / scan / screenshot ─►  scan ─► rectify ─► fragile HMAC seal
-              robust DWT-DCT     rectify ─► soft bits           │
-              ID + pilot +       pilot test ─► RS + z-test       ▼
-              Tardos code        Tardos accusation             verify ─► block tamper heat-map
-```
-
-## Quick start
+## Setup (once)
 
 ```bash
-cd WaterMark-VIT
 python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
-.venv/bin/python cli.py --data scratch/demo demo        # full lifecycle on synthetic data
-.venv/bin/python app.py                                  # dashboard at http://127.0.0.1:5050
-.venv/bin/python -m pytest -q tests                      # 14 tests
-.venv/bin/python evaluate.py --pages 16 --students 200   # writes results/report.md
 ```
 
-### CLI
+## Try it
 
 ```bash
-python cli.py create-exam "CAT1 CSE3501" roster.txt        # one reg. no. per line
-python cli.py template blank.png --kind booklet            # or use your own PNG/JPG/PDF page
-python cli.py issue 0 blank.png issued/ --pdf              # one watermarked copy per student
-python cli.py investigate leaked_photo.jpg                 # who leaked it?
-python cli.py seal evaluated_scan.png sealed.png           # fragile layer after marking
-python cli.py verify sealed.png --overlay heatmap.png      # exit code 2 if tampered
-python cli.py attack issued/23BCE1001.png phone30deg40cm leak.jpg   # simulate a channel
+.venv/bin/python cli.py test my_assignment.pdf    # use any scanned pages you have
 ```
 
-### Dashboard tabs
+The command does three things:
 
-1. **Exams**: create an exam from a roster.
-2. **Issue**: download a ZIP of per-student PNG or PDF copies.
-3. **Leak lab**: pick a student (or two colluders), optionally add handwriting, pick a leak channel, and generate the leaked copy.
-4. **Investigate**: upload any leaked image to get the verdict, the decoded student, Tardos suspects against the threshold, and the rectified page.
-5. **Seal & verify**: seal an evaluated scan, tamper with it, and verify it to get a heat-map.
-6. **Audit log**.
+1. It gives each page a different student's hidden ID.
+2. It leaks each page 15 ways: WhatsApp, screenshot, JPEG, crop, phone photo, photo of a screen, print-scan, and more.
+3. It works out who leaked each copy.
+
+It prints the result and writes `test_output/report.md`.
+
+To add a real capture, open a page from `test_output/pages/` on your laptop, photograph the screen, and save the photo as `test_output/leaks/P01_screen_myphone.jpg`. Then run `.venv/bin/python cli.py analyze`.
+
+Other ways in:
+
+```bash
+.venv/bin/python cli.py demo         # the full story on a sample page: issue -> leak -> trace -> seal -> catch an edited mark
+.venv/bin/python app.py              # web dashboard at http://127.0.0.1:5050
+.venv/bin/python evaluate.py         # full evaluation -> results/report.md
+.venv/bin/python -m pytest -q tests  # 15 tests
+```
+
+## Using it for a real exam
+
+```bash
+.venv/bin/python cli.py create-exam "CAT1 CSE3501" roster.txt          # one registration number per line
+.venv/bin/python cli.py issue 1 issued/ --page question_paper.pdf      # one watermarked copy per student
+.venv/bin/python cli.py investigate leaked_photo.jpg                   # who leaked it?
+.venv/bin/python cli.py seal evaluated_scan.png sealed.png             # after marking
+.venv/bin/python cli.py verify sealed.png --overlay heatmap.png        # were the marks changed?
+```
+
+Keep the `data/` folder safe. It holds the secret key and the student list, and nothing can be decoded without it.
 
 ## How it works
 
-| Component | File | What it does |
+| Part | Plain idea | File |
 |---|---|---|
-| Sync | `imaging.py` | Four ArUco markers. A RANSAC homography warps any capture back to a canonical 1280×1792 page. Paper is tinted to 245 so the mark has headroom. |
-| Robust layer | `robust.py` | 32×32 blocks → Haar LL → 16×16 DCT. One bit per block as the sign of `mean(C_A) − mean(C_B)` over 8 keyed low/mid-frequency coefficients, with minimum-energy correction to margin T. The sign test is gain- and offset-invariant, which suits print and camera tone shifts. |
-| Block roles | `robust.py` | Checkerboard layout. Even blocks form a periodic 16×16-block tile holding the 64-bit ID codeword plus a 64-bit keyed **pilot**. Odd blocks carry the 320-bit Tardos codeword through a keyed interleaver. |
-| ID decoding | `ecc.py`, `pipeline.py` | RS(8,2) proposes a codeword. The decision is a correlation **z-test** against every registered codeword, with a Bonferroni bound so the family-wise false-ID rate is ≤ 10⁻⁴. |
-| Presence / crops | `robust.py` | The pilot is identical on every copy. Its correlation says whether a watermark exists at all, and with no fiducials (a crop) a blind search over pixel alignment × tile phase locks onto it. |
-| Collusion | `tardos.py` | Symmetric Tardos code (c = 2, ε = 10⁻³). Low-confidence positions are treated as erasures. The threshold is Z = √L_eff · Φ⁻¹(1 − ε/n). |
-| Fragile layer | `fragile.py` | 16×16 blocks. HMAC-SHA256(k_script, block index ‖ 7 MSB planes) = 256 bits, written into the block's 256 LSBs in a logistic-map order. Block index and script ID are bound in, so copy-paste between blocks or scripts fails. |
-| Registry | `registry.py` | SQLite registry: pseudonymous shuffled roster indices, issued-copy hashes, sealed scripts and an audit log. Only the index is embedded, never the registration number. |
-| Attacks | `attacks.py` | JPEG, WebP, resize, crop, rotation, noise, blur, StirMark bending, WhatsApp, screenshot, simulated print-scan, phone photo and screen-shoot, 3 collusion attacks, 4 tamper attacks. |
+| Corner markers | Four small black squares let any tilted photo be straightened back into a flat page. | `imaging.py` |
+| Hidden ID | The page is split into small blocks. Each block is nudged very slightly to store one bit, in a way that survives JPEG compression, blur and camera tone changes. | `robust.py` |
+| Error correction | Reed–Solomon coding fixes damaged bits. A statistical test makes sure noise never names a student. | `ecc.py`, `pipeline.py` |
+| Fingerprint | A second, longer code (Tardos) still catches students who combine their copies to hide. | `tardos.py` |
+| Tamper seal | A cryptographic hash (HMAC) of each 16×16 block is hidden in that block. Any edit breaks it and shows on a heat-map. | `fragile.py` |
+| Registry | A database maps hidden numbers to students, so only an index is embedded, never the registration number. | `registry.py` |
+| Leak simulator | Computer models of WhatsApp, screenshots, phone photos, print-scan and more. | `attacks.py` |
+| Leak test | The `cli.py test` command. | `leaktest.py` |
 
 ## Results
 
-`results/report.md` is regenerated by `evaluate.py`. It covers 16 pages, 200 students, every channel, with and without handwriting added after embedding. In summary:
+Full evaluation (16 pages, 200 students; `results/report.md`):
 
-- PSNR ≈ 41 dB and SSIM ≈ 0.98.
-- 100% correct ID on every simulated digital and physical channel, including JPEG Q30, WhatsApp, print-scan, phone photos at 0–45° and screen-shooting. The exceptions are handwritten pages under StirMark (87.5%) and blind crops (87.5% at 50% of the page, 50% at 30%).
-- **No wrong ID** (0 across all channels), **no innocent accused** across 100,296 innocent Tardos trials, and 0/80 unmarked pages flagged.
-- Collusion (c = 2): at least one colluder is caught in 93.8–100% of trials, and the two colluders are always the top two scores.
-- Tamper localisation F1 = 1.0.
+- The watermark is invisible: PSNR ≈ 41 dB, SSIM ≈ 0.98.
+- The right student was found 100% of the time for JPEG, WhatsApp, screenshots, print-scan, phone photos at 0–45° and photos of a screen. The weakest cases are small crops of handwritten pages.
+- A wrong student was never named, and unmarked pages were never flagged.
+- When two students combine their copies, at least one is caught in 94–100% of trials, and no innocent student is accused.
+- Edited marks are located exactly (F1 = 1.0).
 
-## Real-world field test
+On six real handwritten, phone-scanned assignment pages, `cli.py test` traced **90/90** leaked copies to the right student, with 0 wrong. The original unwatermarked pages all returned "No watermark detected".
 
-`fieldkit.py` turns the simulated results into measured ones.
+## Limitations
 
-```bash
-python fieldkit.py prepare kit/ --pages 12      # kit/print_me.pdf, kit/digital/*.png, manifest, PROTOCOL.md
-# print, write on the marked pages, scan/photograph, name files  P03_phone30_pixel7.jpg
-python fieldkit.py analyze kit/ captures/       # captures_report/report.md + results.csv + failures/
-```
-
-1. **Prepare.** Every kit page belongs to a different student of a 200-student pseudo-class, so correct attribution is not a coin flip. Odd pages are answer booklets marked *please write on this page*, which tests embed → write → capture.
-2. **Capture.** `PROTOCOL.md` lists the channel tags: `scan150`, `scan300`, `phone0`, `phone30`, `phone45`, `screen`, `whatsapp` and `crop`.
-3. **Analyze.** Accuracy, wrong-ID count and Tardos detection are reported by channel, by device and for written versus clean pages. Rectified views of failed captures are saved for diagnosis.
-4. **Same data directory.** Use the same `--data` directory for both steps, because it holds the key and registry.
-5. **Printing.** Print with "fit to printable area" so the corner markers aren't clipped.
-
-## Limitations (be upfront about these in the report)
-
-- **Physical channels here are simulations.** The roadmap's real print → scan and print → phone dataset (≥ 50 pages × devices) is still the authoritative test. Run `cli.py issue`, print the pages, photograph them, then run `cli.py investigate`.
-- **Blind crop decoding assumes the scale is roughly unchanged** (screenshot crops). A crop that is *also* rescaled and has no fiducials is not handled. Small handwritten crops (≈30% of the page) are the weakest case.
-- **The fragile layer only works on lossless copies.** Any JPEG re-save shows as tampering by design. Seal and store PNGs.
-- **Tardos guarantees are for c = 2.** Larger coalitions need longer codes or multi-page spreading.
-- **Ethics and privacy.** Get faculty approval before deployment. `data/master.key` and the registry are sensitive, so restrict access to them.
+- The leaks are **computer-simulated**. Real phone and screen captures are still the strongest proof, and you can add your own as described above.
+- The tamper seal only works on lossless PNG copies. Re-saving as JPEG counts as tampering.
+- The fingerprint is designed for up to 2 colluding students.
+- The `data/` folder is sensitive. Get faculty approval before using this on real students.

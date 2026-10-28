@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WaterMark-VIT</title>
+<style>
+:root{--bg:#f6f7f9;--panel:#fff;--ink:#16181d;--muted:#5d6472;--line:#e2e5ea;--accent:#2d5bd7;--accent-ink:#fff;
+--ok:#1d7f4e;--ok-bg:#e6f4ec;--bad:#b42318;--bad-bg:#fdecea;--warn:#9a6700;--warn-bg:#fff4d6}
+@media (prefers-color-scheme:dark){:root{--bg:#111318;--panel:#1a1d24;--ink:#e8eaee;--muted:#9aa1ad;--line:#2b303a;
+--accent:#6b8cff;--accent-ink:#0b0d12;--ok:#5fd394;--ok-bg:#15291f;--bad:#ff8a80;--bad-bg:#2d1715;--warn:#f2c14e;--warn-bg:#2b2410}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
+header{padding:20px 24px 0;max-width:1180px;margin:auto}h1{margin:0;font-size:22px}header p{margin:4px 0 0;color:var(--muted)}
+nav{display:flex;gap:4px;flex-wrap:wrap;max-width:1180px;margin:16px auto 0;padding:0 24px;border-bottom:1px solid var(--line)}
+nav button{background:none;border:0;padding:10px 14px;color:var(--muted);font:inherit;cursor:pointer;border-bottom:2px solid transparent}
+nav button.on{color:var(--ink);border-color:var(--accent);font-weight:600}
+main{max-width:1180px;margin:auto;padding:20px 24px 60px}section{display:none}section.on{display:block}
+.grid{display:grid;grid-template-columns:minmax(300px,380px) 1fr;gap:20px}@media(max-width:860px){.grid{grid-template-columns:1fr}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px}.card h2{font-size:16px;margin:0 0 12px}
+label{display:block;font-size:13px;color:var(--muted);margin:10px 0 4px}
+input,select,textarea{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:7px;background:var(--bg);color:var(--ink);font:inherit}
+textarea{min-height:140px;font-family:ui-monospace,Menlo,monospace;font-size:13px}
+.row{display:flex;gap:10px}.row>*{flex:1}.chk{display:flex;align-items:center;gap:8px;margin-top:10px;color:var(--ink);font-size:14px}.chk input{width:auto}
+button.btn{margin-top:14px;background:var(--accent);color:var(--accent-ink);border:0;border-radius:7px;padding:9px 16px;font:inherit;font-weight:600;cursor:pointer}
+button.ghost{background:none;color:var(--accent);border:1px solid var(--line)}button:disabled{opacity:.5;cursor:wait}
+img.page{width:100%;border:1px solid var(--line);border-radius:6px;background:#fff;display:block}
+.muted{color:var(--muted);font-size:13px}.pill{display:inline-block;padding:2px 8px;border-radius:99px;font-size:12px;background:var(--bg);border:1px solid var(--line)}
+.verdict{padding:12px 14px;border-radius:8px;font-weight:600;margin-bottom:12px}.v-ok{background:var(--ok-bg);color:var(--ok)}
+.v-bad{background:var(--bad-bg);color:var(--bad)}.v-warn{background:var(--warn-bg);color:var(--warn)}
+table{width:100%;border-collapse:collapse;font-size:14px}td,th{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line)}th{color:var(--muted);font-weight:500}
+.bar{height:8px;background:var(--line);border-radius:4px;position:relative;min-width:120px}.bar i{position:absolute;left:0;top:0;bottom:0;border-radius:4px;background:var(--accent)}
+.bar b{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--bad)}
+.kv{display:grid;grid-template-columns:150px 1fr;gap:4px 12px;font-size:14px;margin-bottom:12px}.kv div:nth-child(odd){color:var(--muted)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:12px}@media(max-width:600px){.two{grid-template-columns:1fr}}
+.err{color:var(--bad);margin-top:8px;font-size:14px}code{font-size:13px}
+</style>
+</head>
+<body>
+<header>
+  <h1>WaterMark-VIT</h1>
+  <p>Leak attribution and tamper localisation for exam papers and answer scripts: a robust per-student watermark before the exam, a fragile seal after evaluation.</p>
+</header>
+<nav id="tabs">
+  <button data-t="exams" class="on">1 · Exams</button>
+  <button data-t="issue">2 · Issue copies</button>
+  <button data-t="lab">3 · Leak lab</button>
+  <button data-t="inv">4 · Investigate</button>
+  <button data-t="seal">5 · Seal &amp; verify</button>
+  <button data-t="audit">Audit log</button>
+</nav>
+<main>
+
+<section id="exams" class="on"><div class="grid">
+  <div class="card"><h2>Create exam</h2>
+    <label>Exam name</label><input id="exName" value="CAT1 · CSE3501 Information Security">
+    <label>Roster (one registration number per line, max 1024)</label><textarea id="exRoster"></textarea>
+    <p class="muted">Only a pseudonymous roster index goes into the watermark; this mapping stays in the registry.</p>
+    <button class="btn" id="exCreate">Create exam</button><div class="err" id="exErr"></div>
+  </div>
+  <div class="card"><h2>Registered exams</h2><table id="exTable"></table></div>
+</div></section>
+
+<section id="issue"><div class="grid">
+  <div class="card"><h2>Issue watermarked copies</h2>
+    <label>Exam</label><select class="examSel" id="isExam"></select>
+    <label>Master page (PNG/JPG/PDF). Leave empty to use a synthetic template</label><input type="file" id="isFile" accept="image/*,.pdf">
+    <div class="row"><div><label>Template</label><select id="isKind"><option value="booklet">Answer booklet</option><option value="question">Question paper</option></select></div>
+      <div><label>Template seed</label><input type="number" id="isSeed" value="3"></div></div>
+    <div class="row"><div><label>Output</label><select id="isFmt"><option value="png">PNG per student</option><option value="pdf">PDF per student</option></select></div></div>
+    <button class="btn ghost" id="isPreview">Preview template</button>
+    <button class="btn" id="isGo">Generate &amp; download ZIP</button><div class="err" id="isErr"></div>
+  </div>
+  <div class="card"><h2>Preview</h2><img class="page" id="isImg" alt=""></div>
+</div></section>
+
+<section id="lab"><div class="grid">
+  <div class="card"><h2>Simulate a leak</h2>
+    <label>Exam</label><select class="examSel" id="labExam"></select>
+    <label>Leaking student</label><select id="labStudent"></select>
+    <div class="chk"><input type="checkbox" id="labCollude"><span>Collusion: a second student combines copies</span></div>
+    <div id="labColBox" style="display:none">
+      <label>Second student</label><select id="labStudent2"></select>
+      <label>Collusion attack</label><select id="labColAtk"></select>
+    </div>
+    <div class="chk"><input type="checkbox" id="labHand" checked><span>Student writes on the page before it leaks</span></div>
+    <label>Leak channel</label><select id="labChannel"></select>
+    <div class="row"><div><label>Template</label><select id="labKind"><option value="booklet">Answer booklet</option><option value="question">Question paper</option></select></div>
+      <div><label>Seed</label><input type="number" id="labSeed" value="3"></div></div>
+    <button class="btn" id="labGo">Generate leaked copy</button>
+    <button class="btn ghost" id="labInv" disabled>Investigate this leak →</button>
+    <div class="err" id="labErr"></div>
+  </div>
+  <div class="card"><h2>Leaked copy</h2><img class="page" id="labImg" alt=""><p class="muted">Physical channels (print-scan, phone, screen) are simulated.</p></div>
+</div></section>
+
+<section id="inv"><div class="grid">
+  <div class="card"><h2>Investigate a leaked copy</h2>
+    <label>Photo / scan / screenshot / crop</label><input type="file" id="invFile" accept="image/*,.pdf">
+    <button class="btn" id="invGo">Investigate</button><div class="err" id="invErr"></div>
+    <p class="muted" style="margin-top:14px">Pipeline: ArUco fiducials → homography → DWT/DCT soft bits → pilot check → RS / registry-ML decode → Tardos accusation. With no fiducials (a crop), a blind alignment search runs on the pilot.</p>
+  </div>
+  <div class="card"><h2>Result</h2><div id="invOut" class="muted">No investigation yet.</div></div>
+</div></section>
+
+<section id="seal"><div class="grid">
+  <div class="card"><h2>1. Seal an evaluated script</h2>
+    <label>Scan of the evaluated answer booklet</label><input type="file" id="sealFile" accept="image/*,.pdf">
+    <p class="muted">No scan handy? <a href="#" id="sealDemo">Make a demo scan</a> (issued booklet → handwriting + marks → print-scan).</p>
+    <button class="btn" id="sealGo">Seal</button><div class="err" id="sealErr"></div>
+    <div id="sealInfo"></div>
+    <h2 style="margin-top:22px">2. Tamper with it (demo)</h2>
+    <div class="row"><div><label>Attack</label><select id="tamAtk"></select></div><div><label>Q column</label><input type="number" id="tamCol" value="2" min="1" max="9"></div><div><label>New mark</label><input id="tamMark" value="9"></div></div>
+    <button class="btn ghost" id="tamGo" disabled>Apply tamper</button>
+    <h2 style="margin-top:22px">3. Verify</h2>
+    <label>…or upload a sealed PNG</label><input type="file" id="verFile" accept="image/png">
+    <label>Script ID (optional; read from the watermark if blank)</label><input id="verSid" placeholder="E00-S0012">
+    <button class="btn" id="verGo">Verify</button><div class="err" id="verErr"></div>
+  </div>
+  <div class="card"><h2>Script</h2><div id="verOut"></div><img class="page" id="sealImg" alt=""></div>
+</div></section>
+
+<section id="audit"><div class="card"><h2>Audit log</h2><table id="auditTable"></table></div></section>
+</main>
+
+<script>
+const $ = s => document.querySelector(s);
+const state = {leak: null, sealed: null, current: null};
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+document.querySelectorAll("#tabs button").forEach(b => b.onclick = () => {
+  document.querySelectorAll("#tabs button, section").forEach(e => e.classList.remove("on"));
+  b.classList.add("on"); $("#" + b.dataset.t).classList.add("on");
+  if (b.dataset.t === "audit") loadAudit();
+});
+
+async function api(url, form, opts = {}) {
+  const r = await fetch(url, form ? {method: "POST", body: form} : {});
+  if (opts.blob) { if (!r.ok) throw new Error((await r.json()).error); return r.blob(); }
+  const j = await r.json(); if (!r.ok) throw new Error(j.error || r.statusText); return j;
+}
+function busy(btn, on) { btn.disabled = on; btn.dataset.label ??= btn.textContent; btn.textContent = on ? "Working…" : btn.dataset.label; }
+async function run(btn, errEl, fn) { $(errEl).textContent = ""; busy(btn, true);
+  try { await fn(); } catch (e) { $(errEl).textContent = e.message; } finally { busy(btn, false); } }
+
+// ---- exams
+$("#exRoster").value = Array.from({length: 60}, (_, i) => `23BCE${1000 + i}`).join("\n");
+async function loadExams() {
+  const ex = await api("/api/exams");
+  $("#exTable").innerHTML = "<tr><th>Code</th><th>Name</th><th>Students</th><th>Created</th></tr>" +
+    ex.map(e => `<tr><td>${e.code}</td><td>${esc(e.name)}</td><td>${e.n_students}</td><td class="muted">${esc(e.created)}</td></tr>`).join("");
+  document.querySelectorAll(".examSel").forEach(s => {
+    const v = s.value; s.innerHTML = ex.map(e => `<option value="${e.code}">${e.code} · ${esc(e.name)}</option>`).join("");
+    if (v) s.value = v; });
+  if (ex.length) loadStudents();
+}
+async function loadStudents() {
+  const st = await api(`/api/exams/${$("#labExam").value}/students`);
+  const opts = st.map(s => `<option value="${s.roster_idx}">${esc(s.reg_no)}</option>`).join("");
+  $("#labStudent").innerHTML = opts; $("#labStudent2").innerHTML = opts;
+  if (st.length > 1) $("#labStudent2").selectedIndex = 1;
+}
+$("#labExam").onchange = loadStudents;
+$("#exCreate").onclick = e => run(e.target, "#exErr", async () => {
+  const f = new FormData(); f.append("name", $("#exName").value); f.append("roster", $("#exRoster").value);
+  await api("/api/exams", f); await loadExams(); });
+
+// ---- issue
+$("#isPreview").onclick = e => run(e.target, "#isErr", async () => {
+  const j = await api(`/api/template?kind=${$("#isKind").value}&seed=${$("#isSeed").value}`); $("#isImg").src = j.image; });
+$("#isGo").onclick = e => run(e.target, "#isErr", async () => {
+  const f = new FormData(); f.append("exam", $("#isExam").value); f.append("kind", $("#isKind").value);
+  f.append("seed", $("#isSeed").value); f.append("format", $("#isFmt").value);
+  if ($("#isFile").files[0]) f.append("file", $("#isFile").files[0]);
+  const blob = await api("/api/issue", f, {blob: true});
+  const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = `exam${$("#isExam").value}_copies.zip`; a.click(); });
+
+// ---- lab
+api("/api/channels").then(c => {
+  $("#labChannel").innerHTML = c.leak.map(n => `<option ${n === "phone30deg40cm" ? "selected" : ""}>${n}</option>`).join("");
+  $("#labColAtk").innerHTML = c.collusion.map(n => `<option>${n}</option>`).join("");
+  $("#tamAtk").innerHTML = c.tamper.map(n => `<option>${n}</option>`).join("");
+});
+$("#labCollude").onchange = () => $("#labColBox").style.display = $("#labCollude").checked ? "block" : "none";
+$("#labGo").onclick = e => run(e.target, "#labErr", async () => {
+  const f = new FormData(); f.append("exam", $("#labExam").value); f.append("roster_idx", $("#labStudent").value);
+  if ($("#labCollude").checked) { f.append("roster_idx", $("#labStudent2").value); f.append("collusion", $("#labColAtk").value); }
+  f.append("handwriting", $("#labHand").checked ? "1" : "0"); f.append("channel", $("#labChannel").value);
+  f.append("kind", $("#labKind").value); f.append("seed", $("#labSeed").value);
+  const j = await api("/api/simulate-leak", f); state.leak = j.image; $("#labImg").src = j.image; $("#labInv").disabled = false; });
+$("#labInv").onclick = () => { document.querySelector('[data-t="inv"]').click(); investigate(state.leak); };
+
+// ---- investigate
+$("#invGo").onclick = e => run(e.target, "#invErr", () => investigate(null));
+async function investigate(dataUrl) {
+  $("#invOut").innerHTML = "Analysing…";
+  const f = new FormData();
+  if (dataUrl) f.append("file_data", dataUrl); else if ($("#invFile").files[0]) f.append("file", $("#invFile").files[0]);
+  else throw new Error("choose a file");
+  try { renderInv(await api("/api/investigate", f)); } catch (e) { $("#invOut").innerHTML = `<div class="err">${esc(e.message)}</div>`; }
+}
+function renderInv(r) {
+  const cls = r.verdict.startsWith("Leak traced") ? "v-bad" : r.verdict.startsWith("No") ? "v-ok" : "v-warn";
+  let h = `<div class="verdict ${cls}">${esc(r.verdict)}</div><div class="kv">
+    <div>Sync</div><div>${r.mode === "fiducials" ? `fiducials (${r.sync.markers.length}/4 markers)` : "blind search (no fiducials)"}</div>
+    <div>Pilot correlation</div><div>${r.pilot} ${r.watermark_present ? '<span class="pill">watermark present</span>' : '<span class="pill">not detected</span>'}</div>
+    <div>ID soft confidence</div><div>${r.confidence}</div>`;
+  if (r.decoded) h += `<div>Decoded student</div><div><b>${esc(r.decoded.reg_no)}</b> · exam ${esc(r.decoded.exam_name)} · roster #${r.decoded.roster_idx}</div>
+    <div>Decoder</div><div>${r.decoded.method} (z = ${r.decoded.z} ≥ ${r.decoded.z_min}, ${r.decoded.bit_errors} raw bit errors)</div>`;
+  h += "</div>";
+  if (r.tardos) {
+    const max = Math.max(r.tardos.threshold * 1.6, ...r.tardos.suspects.map(s => s.score));
+    h += `<h2>Tardos fingerprint suspects</h2><p class="muted">Threshold Z = ${r.tardos.threshold} over ${r.tardos.effective_len} positions; false-accusation bound ε = ${r.tardos.eps}</p>
+    <table><tr><th>Student</th><th>Score</th><th></th><th></th></tr>` + r.tardos.suspects.map(s =>
+      `<tr><td>${esc(s.reg_no)}</td><td>${s.score}</td><td><div class="bar"><i style="width:${Math.max(0, s.score) / max * 100}%"></i><b style="left:${r.tardos.threshold / max * 100}%"></b></div></td>
+      <td>${s.accused ? '<span class="pill" style="color:var(--bad)">accused</span>' : ""}</td></tr>`).join("") + "</table>";
+  }
+  if (r.rectified) h += `<h2 style="margin-top:16px">Rectified page</h2><img class="page" src="${r.rectified}">`;
+  $("#invOut").innerHTML = h;
+}
+
+// ---- seal & verify
+function showScript(src) { state.current = src; $("#sealImg").src = src; }
+$("#sealDemo").onclick = async ev => { ev.preventDefault(); $("#sealErr").textContent = "";
+  try {
+    const f = new FormData(); f.append("exam", $("#labExam").value); f.append("roster_idx", $("#labStudent").value);
+    f.append("handwriting", "1"); f.append("channel", "printscan300"); f.append("seed", "4");
+    const j = await api("/api/simulate-leak", f); state.scan = j.image; showScript(j.image);
+    $("#verOut").innerHTML = '<p class="muted">Demo scan ready (evaluated booklet). Click Seal.</p>';
+  } catch (e) { $("#sealErr").textContent = e.message; } };
+$("#sealGo").onclick = e => run(e.target, "#sealErr", async () => {
+  const f = new FormData();
+  if ($("#sealFile").files[0]) f.append("file", $("#sealFile").files[0]); else if (state.scan) f.append("file_data", state.scan);
+  else throw new Error("upload a scan or make a demo scan");
+  const j = await api("/api/seal", f); state.sealed = j.image; showScript(j.image); $("#tamGo").disabled = false;
+  $("#verSid").value = j.script_id;
+  $("#sealInfo").innerHTML = `<p>Sealed <b>${j.script_id}</b> (${esc(j.reg_no)}). <a download="${j.script_id}.png" href="${j.image}">Download PNG</a></p>`;
+  $("#verOut").innerHTML = ""; });
+$("#tamGo").onclick = e => run(e.target, "#sealErr", async () => {
+  const f = new FormData(); f.append("file_data", state.sealed); f.append("attack", $("#tamAtk").value);
+  f.append("col", String(Number($("#tamCol").value) - 1)); f.append("mark", $("#tamMark").value);
+  const j = await api("/api/tamper", f); showScript(j.image);
+  $("#verOut").innerHTML = '<p class="muted">Tampered copy loaded. Click Verify.</p>'; });
+$("#verGo").onclick = e => run(e.target, "#verErr", async () => {
+  const f = new FormData();
+  if ($("#verFile").files[0]) f.append("file", $("#verFile").files[0]); else if (state.current) f.append("file_data", state.current);
+  else throw new Error("nothing to verify");
+  if ($("#verSid").value) f.append("script_id", $("#verSid").value);
+  const r = await api("/api/verify", f);
+  $("#verOut").innerHTML = `<div class="verdict ${r.intact ? "v-ok" : "v-bad"}">${r.intact ? "Intact: all blocks authenticate" :
+    `Tampered: ${r.tampered_blocks} of ${r.total_blocks} blocks fail authentication`}</div>
+    <div class="kv"><div>Script</div><div>${esc(r.script_id)} ${r.reg_no ? "· " + esc(r.reg_no) : ""}</div><div>Registered</div><div>${r.registered}</div></div>`;
+  $("#sealImg").src = r.overlay; });
+
+// ---- audit
+async function loadAudit() {
+  const a = await api("/api/audit");
+  $("#auditTable").innerHTML = "<tr><th>Time</th><th>Action</th><th>Detail</th></tr>" +
+    a.map(r => `<tr><td class="muted">${esc(r.ts)}</td><td>${esc(r.action)}</td><td><code>${esc(r.detail)}</code></td></tr>`).join("");
+}
+loadExams();
+</script>
+</body>
+</html>

@@ -1,0 +1,13 @@
+page_id,kind,write_on_it,exam_code,roster_idx,reg_no
+P01,booklet,1,1,10,KIT0128
+P02,question,0,1,59,KIT0010
+P03,booklet,1,1,162,KIT0148
+P04,question,0,1,172,KIT0167
+P05,booklet,1,1,130,KIT0166
+P06,question,0,1,174,KIT0164
+P07,booklet,1,1,150,KIT0036
+P08,question,0,1,118,KIT0104
+P09,booklet,1,1,44,KIT0096
+P10,question,0,1,111,KIT0123
+P11,booklet,1,1,178,KIT0087
+P12,question,0,1,56,KIT0089

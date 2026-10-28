@@ -1,0 +1,307 @@
+{
+  "config": {
+    "pages": 16,
+    "students": 200,
+    "out": "results",
+    "seed": 2026
+  },
+  "fidelity": {
+    "psnr": [
+      41.11827552647277,
+      0.1735077497184819
+    ],
+    "ssim": [
+      0.9826497021714913,
+      0.0002725624914961585
+    ]
+  },
+  "robustness": {
+    "none": {
+      "id_acc": 1.0,
+      "id_acc_clean": 1.0,
+      "wrong_id": 0.0,
+      "raw_ber": 0.024739583333333332,
+      "tardos_caught": 1.0,
+      "id_acc_hand": 1.0
+    },
+    "jpeg90": {
+      "id_acc": 1.0,
+      "id_acc_clean": 1.0,
+      "wrong_id": 0.0,
+      "raw_ber": 0.024739583333333332,
+      "tardos_caught": 1.0,
+      "id_acc_hand": 1.0
+    },
+    "jpeg70": {
+      "id_acc": 1.0,
+      "id_acc_clean": 1.0,
+      "wrong_id": 0.0,
+      "raw_ber": 0.026041666666666668,
+      "tardos_caught": 1.0,
+      "id_acc_hand": 1.0
+    },
+    "jpeg50": {
+      "id_acc": 1.0,
+      "id_acc_clean": 1.0,
+      "wrong_id": 0.0,
+      "raw_ber": 0.02734375,
+      "tardos_caught": 1.0,
+      "id_acc_hand": 1.0
+    },
+    "jpeg30": {
+      "id_acc": 1.0,
+      "id_acc_clean": 1.0,
+      "wrong_id": 0.0,
+      "raw_ber": 0.041666666666666664,
+      "tardos_caught": 1.0,
+      "id_acc_hand": 1.0
+    },
+    "webp60": {
+      "id_acc": 1.0,
+      "id_acc_clean": 1.0,
+      "wrong_id": 0.0,
+      "raw_ber": 0.06315104166666667,
+      "tardos_caught": 1.0,
+      "id_acc_hand": 1.0
+    },
+    "resize0.5": {
+      "id_acc": 1.0,
+      "id_acc_clean": 1.0,
+      "wrong_id": 0.0,
+      "raw_ber": 0.024088541666666668,
+      "tardos_caught": 1.0,
+      "id_acc_hand": 1.0
+    },
+    "resize1.5": {
+      "id_acc": 1.0,
+      "id_acc_clean": 1.0,
+      "wrong_id": 0.0,
+      "raw_ber": 0.024739583333333332,
+      "tardos_caught": 1.0,
+      "id_acc_hand": 1.0
+    },
+    "rotate3": {
+      "id_acc": 1.0,
+      "id_acc_clean": 1.0,
+      "wrong_id": 0.0,
+      "raw_ber": 0.024088541666666668,
+      "tardos_caught": 1.0,
+      "id_acc_hand": 1.0
+    },
+    "rotate-5": {
+      "id_acc": 1.0,
+      "id_acc_clean": 1.0,
+      "wrong_id": 0.0,
+      "raw_ber": 0.025390625,
+      "tardos_caught": 1.0,
+      "id_acc_hand": 1.0
+    },
+    "noise8": {
+      "id_acc": 1.0,
+      "id_acc_clean": 1.0,
+      "wrong_id": 0.0,
+      "raw_ber": 0.037760416666666664,
+      "tardos_caught": 1.0,
+      "id_acc_hand": 1.0
+    },
+    "blur5": {
+      "id_acc": 1.0,
+      "id_acc_clean": 1.0,
+      "wrong_id": 0.0,
+      "raw_ber": 0.027994791666666668,
+      "tardos_caught": 1.0,
+      "id_acc_hand": 1.0
+    },
+    "stirmark": {
+      "id_acc": 0.9583333333333334,
+      "id_acc_clean": 1.0,
+      "wrong_id": 0.0,
+      "raw_ber": 0.080078125,
+      "tardos_caught": 1.0,
+      "id_acc_hand": 0.875
+    },
+    "whatsapp": {
+      "id_acc": 1.0,
+      "id_acc_clean": 1.0,
+      "wrong_id": 0.0,
+      "raw_ber": 0.03125,
+      "tardos_caught": 1.0,
+      "id_acc_hand": 1.0
+    },
+    "screenshot1080": {
+      "id_acc": 1.0,
+      "id_acc_clean": 1.0,
+      "wrong_id": 0.0,
+      "raw_ber": 0.024088541666666668,
+      "tardos_caught": 1.0,
+      "id_acc_hand": 1.0
+    },
+    "crop50": {
+      "id_acc": 0.9583333333333334,
+      "id_acc_clean": 1.0,
+      "wrong_id": 0.0,
+      "id_acc_hand": 0.875
+    },
+    "crop30": {
+      "id_acc": 0.8333333333333334,
+      "id_acc_clean": 1.0,
+      "wrong_id": 0.0,
+      "id_acc_hand": 0.5
+    },
+    "printscan150": {
+      "id_acc": 1.0,
+      "id_acc_clean": 1.0,
+      "wrong_id": 0.0,
+      "raw_ber": 0.037760416666666664,
+      "tardos_caught": 1.0,
+      "id_acc_hand": 1.0
+    },
+    "printscan300": {
+      "id_acc": 1.0,
+      "id_acc_clean": 1.0,
+      "wrong_id": 0.0,
+      "raw_ber": 0.043619791666666664,
+      "tardos_caught": 1.0,
+      "id_acc_hand": 1.0
+    },
+    "phone0deg40cm": {
+      "id_acc": 1.0,
+      "id_acc_clean": 1.0,
+      "wrong_id": 0.0,
+      "raw_ber": 0.057291666666666664,
+      "tardos_caught": 1.0,
+      "id_acc_hand": 1.0
+    },
+    "phone30deg40cm": {
+      "id_acc": 1.0,
+      "id_acc_clean": 1.0,
+      "wrong_id": 0.0,
+      "raw_ber": 0.057291666666666664,
+      "tardos_caught": 1.0,
+      "id_acc_hand": 1.0
+    },
+    "phone45deg60cm": {
+      "id_acc": 1.0,
+      "id_acc_clean": 1.0,
+      "wrong_id": 0.0,
+      "raw_ber": 0.0625,
+      "tardos_caught": 1.0,
+      "id_acc_hand": 1.0
+    },
+    "screenshoot": {
+      "id_acc": 1.0,
+      "id_acc_clean": 1.0,
+      "wrong_id": 0.0,
+      "raw_ber": 0.055989583333333336,
+      "tardos_caught": 1.0,
+      "id_acc_hand": 1.0
+    }
+  },
+  "false_accusation": {
+    "innocent_trials": 100296,
+    "innocent_accused": 0,
+    "rate": 0.0
+  },
+  "unmarked": {
+    "trials": 80,
+    "false_positives": 0
+  },
+  "collusion": {
+    "average+digital": {
+      "caught_one": 1.0,
+      "caught_both": 0.9375,
+      "innocent_accused": 0.0,
+      "top2_are_colluders": 1.0
+    },
+    "average+jpeg70": {
+      "caught_one": 1.0,
+      "caught_both": 0.9375,
+      "innocent_accused": 0.0,
+      "top2_are_colluders": 1.0
+    },
+    "average+printscan300": {
+      "caught_one": 1.0,
+      "caught_both": 1.0,
+      "innocent_accused": 0.0,
+      "top2_are_colluders": 1.0
+    },
+    "splice+digital": {
+      "caught_one": 1.0,
+      "caught_both": 0.75,
+      "innocent_accused": 0.0,
+      "top2_are_colluders": 1.0
+    },
+    "splice+jpeg70": {
+      "caught_one": 1.0,
+      "caught_both": 0.75,
+      "innocent_accused": 0.0,
+      "top2_are_colluders": 1.0
+    },
+    "splice+printscan300": {
+      "caught_one": 1.0,
+      "caught_both": 0.6875,
+      "innocent_accused": 0.0,
+      "top2_are_colluders": 1.0
+    },
+    "interleave+digital": {
+      "caught_one": 1.0,
+      "caught_both": 1.0,
+      "innocent_accused": 0.0,
+      "top2_are_colluders": 1.0
+    },
+    "interleave+jpeg70": {
+      "caught_one": 1.0,
+      "caught_both": 0.9375,
+      "innocent_accused": 0.0,
+      "top2_are_colluders": 1.0
+    },
+    "interleave+printscan300": {
+      "caught_one": 0.9375,
+      "caught_both": 0.9375,
+      "innocent_accused": 0.0,
+      "top2_are_colluders": 1.0
+    }
+  },
+  "tamper": {
+    "marks_overwrite": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "iou": 1.0
+    },
+    "copy_move": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "iou": 1.0
+    },
+    "inpaint": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "iou": 1.0
+    },
+    "erase": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "iou": 1.0
+    }
+  },
+  "fragile_false_alarm_rate_png": 0.0,
+  "fragile_jpeg95_flagged_fraction": 1.0,
+  "timing_s": {
+    "embed": [
+      0.07838171720504761,
+      0.0032802568009646033
+    ],
+    "extract": [
+      0.16464298790779666,
+      0.025633421154161746
+    ],
+    "seal": [
+      0.07926860451698303,
+      0.008388770546006242
+    ]
+  }
+}
